@@ -10,8 +10,10 @@
 #  privvyledge/ros:foxy-ros1-bridge /bin/bash && \
 #  xhost -local:root
 
+ARG ROS1_DISTRO=noetic
+ARG ROS2_DISTRO=foxy
 # ROS1 Noetic and ROS2 Foxy with ROS1 bridge
-FROM ros:foxy-ros-base-focal
+FROM ros:${ROS2_DISTRO}-ros-base
 
 ENV SHELL=/bin/bash
 SHELL ["/bin/bash", "-c"]
@@ -22,8 +24,10 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6
 # setup sources.list
 RUN echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros1-latest.list
 
-ENV ROS1_DISTRO=noetic
-ENV ROS2_DISTRO=foxy
+ARG ROS1_DISTRO
+ARG ROS2_DISTRO
+ENV ROS1_DISTRO=${ROS1_DISTRO}
+ENV ROS2_DISTRO=${ROS2_DISTRO}
 
 # install ROS1 packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -67,10 +71,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # build ROS1 bridge (necessary to add support for Ackermann messages and others. They must be installed first)
+# Use my fork of ros1_bridge to fix the bug when using namespaces instead of https://github.com/ros2/ros1_bridge.git
 # https://industrial-training-master.readthedocs.io/en/foxy/_source/session7/ROS1-ROS2-bridge.html#build-the-ros1-bridge
 RUN mkdir -p ~/ros1_bridge_ws/src && \
     cd ~/ros1_bridge_ws/src && \
-    git clone -b ${ROS2_DISTRO} https://github.com/ros2/ros1_bridge.git && \
+    git clone -b ${ROS2_DISTRO} https://github.com/privvyledge/ros1_bridge.git && \
     source /opt/ros/${ROS1_DISTRO}/setup.bash && \
     source /opt/ros/${ROS2_DISTRO}/setup.bash && \
 #    source ~/catkin_ws_to_bridge/devel/setup.bash && \
