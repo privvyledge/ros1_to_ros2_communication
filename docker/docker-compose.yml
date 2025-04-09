@@ -1,12 +1,13 @@
 # Usage: docker compose up
-# todo: change ROS_MASTER_URI to the master PC and ROS_IP to the IP of each F1/10
+# change ROS_MASTER_URI to the master PC and ROS_IP to the IP of each F1/10
+# Specify the following as environment variables either your .env file or in your bashrc or export them before running docker compose: VEHICLE_NAME, ROS_MASTER_URI, ROS_IP
 services:
     # ROS
     ros-master:
         image: ros:noetic-ros-core
         environment:
-            - "ROS_MASTER_URI=http://192.168.2.193:11311"
-            - "ROS_IP=192.168.2.193"
+            - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+            - "ROS_IP=${ROS_IP}"
         container_name: roscore
         tty: true        # docker run -t
         network_mode: "host"
@@ -20,8 +21,8 @@ services:
             context: ./
             dockerfile: Dockerfile.ros1_bridge
         environment:
-            - "ROS_MASTER_URI=http://192.168.2.193:11311"
-            - "ROS_IP=192.168.2.193"
+            - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+            - "ROS_IP=${ROS_IP}"
         network_mode: "host"
         restart: on-failure
         command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && rosparam load /topics_to_bridge.yaml && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge parameter_bridge --ros-args -r __ns:=/gosling3 -r __name:=ros1_bridge"
@@ -32,8 +33,8 @@ services:
     #bridge:
     #    image: privvyledge/ros:foxy-ros1-bridge
     #    environment:
-    #        - "ROS_MASTER_URI=http://192.168.2.193:11311"
-    #        - "ROS_IP=192.168.2.193"
+    #        - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+    #        - "ROS_IP=${ROS_IP}"
     #    network_mode: "host"
     #    restart: on-failure
     #    command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge dynamic_bridge --bridge-all-topics --ros-args -r __ns:=/gosling3 -r __name:=ros1_bridge"
@@ -42,8 +43,8 @@ services:
 #    ros1:
 #       image: ros:noetic-ros-core
 #       environment:
-#           - "ROS_MASTER_URI=http://192.168.2.193:11311"
-#           - "ROS_IP=192.168.2.193"
+#           - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+#           - "ROS_IP=${ROS_IP}"
 #       tty: true        # docker run -t
 #       depends_on:
 #           - ros-master
@@ -92,8 +93,8 @@ services:
 #        depends_on:
 #            - ros-master
 #        environment:
-#            - "ROS_MASTER_URI=http://192.168.2.193:11311"
-#            - "ROS_IP=192.168.2.193"
+#            - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+#            - "ROS_IP=${ROS_IP}"
 #        command: stdbuf -o L rostopic pub /chatter std_msgs/String "hello" -r 1
 #        network_mode: "host"
 #        networks:
