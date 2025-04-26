@@ -8,11 +8,12 @@ services:
         environment:
             - "ROS_MASTER_URI=${ROS_MASTER_URI}"
             - "ROS_IP=${ROS_IP}"
+            - "START_ROSCORE=${START_ROSCORE}"
         container_name: roscore
         tty: true        # docker run -t
         network_mode: "host"
         restart: always
-        command: stdbuf -o L roscore
+        command: stdbuf -o L bash -c "if [ \"$START_ROSCORE\" = \"true\" ]; then exec roscore; else exec sleep infinity; fi"
 
     # ROS + ROS 2.
     bridge:
@@ -24,21 +25,29 @@ services:
             - "ROS_MASTER_URI=${ROS_MASTER_URI}"
             - "ROS_IP=${ROS_IP}"
             - "VEHICLE_NAME=$VEHICLE_NAME"
+            - "RMW_IMPLEMENTATION=rmw_fastrtps_cpp"
+            - "NAMESPACE=${NAMESPACE}"
         network_mode: "host"
         restart: on-failure
-        command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && rosparam load /topics_to_bridge.yaml && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge parameter_bridge --ros-args -r __ns:=/$VEHICLE_NAME -r __name:=ros1_bridge"
+        command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && envsubst < /topics_to_bridge.yaml > /namespaced_topics_to_bridge.yaml && rosparam load /namespaced_topics_to_bridge.yaml && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge parameter_bridge __name:=ros1_bridge_${VEHICLE_NAME}"
         volumes:
             - ../topics_to_bridge.yaml:/topics_to_bridge.yaml:ro
 
-    ## ROS + ROS 2 (bridges all topics. Not recommended as it could be expensive depending on how many topics are running)
-    #bridge:
-    #    image: privvyledge/ros:foxy-ros1-bridge
-    #    environment:
-    #        - "ROS_MASTER_URI=${ROS_MASTER_URI}"
-    #        - "ROS_IP=${ROS_IP}"
-    #    network_mode: "host"
-    #    restart: on-failure
-    #    command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge dynamic_bridge --bridge-all-topics --ros-args -r __ns:=/gosling3 -r __name:=ros1_bridge"
+#    # ROS + ROS 2 (bridges all topics. Not recommended as it could be expensive depending on how many topics are running)
+#    bridge:
+#        image: privvyledge/ros:foxy-ros1-bridge
+#        build:
+#            context: ./
+#            dockerfile: Dockerfile.ros1_bridge
+#        environment:
+#            - "ROS_MASTER_URI=${ROS_MASTER_URI}"
+#            - "ROS_IP=${ROS_IP}"
+#            - "VEHICLE_NAME=$VEHICLE_NAME"
+#            - "RMW_IMPLEMENTATION=rmw_fastrtps_cpp"
+#            - "NAMESPACE=${NAMESPACE}"
+#        network_mode: "host"
+#        restart: on-failure
+#        command: stdbuf -o L bash -c "source /opt/ros/noetic/setup.bash && source /opt/ros/foxy/setup.bash && source ~/ros1_bridge_ws/install/setup.bash && ros2 run ros1_bridge dynamic_bridge --bridge-all-topics __name:=ros1_bridge_${VEHICLE_NAME}e"
 
 #   # ROS 1 (Example: this just runs rostopic list but can run any ros1 node)
 #    ros1:
@@ -80,6 +89,7 @@ services:
         command: stdbuf -o L ros2 launch f1tenth_launch teleop.launch.py launch_localization:=False launch_vehicle:=True launch_sensors:=False use_f1tenth_namespace:=True
         volumes:
           - /dev:/dev  # Mounts /dev to access host devices
+          - ${HOME}/shared_dir:/mnt/shared_dir
           - ${HOME}/data:/mnt/data
           - /tmp/.X11-unix:/tmp/.X11-unix:rw
           - /etc/group:/etc/group:ro

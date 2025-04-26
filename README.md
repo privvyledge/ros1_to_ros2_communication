@@ -9,5 +9,11 @@ This repository is a demonstration of ROS 1 (Melodic and Noetic) to ROS 2 (Foxy 
 ## Quickstart
 1. Clone this repository: `git clone https://github.com/privvyledge/ros1_to_ros2_communication.git`
 2. Navigate to the repository: `cd ros1_to_ros2_communication/docker`
-3. Run the docker image: `docker-compose up`
+3. Setup environment variables:
+   - Vehicle name: `export VEHICLE_NAME=<username>`
+   - Username: `export USER=<username>`
+   - ROS MASTER URI: `export ROS_MASTER_URI=http://<ip_address_of_master>:11311`
+   - ROS IP: `export ROS_IP=<ip_address_of_this_machine>`
+   - Start ROSCORE: `export START_ROSCORE=false`
+4. Run the docker image: `docker-compose up`
 
